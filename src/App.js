@@ -1,14 +1,27 @@
 import React, { useState } from 'react'
+import {
+  BrowserRouter as Router,
+  Route, Link, Redirect, withRouter
+} from 'react-router-dom'
 
-const Menu = () => {
+const Menu = ({addNew, anecdotes, anecdoteById, notification, setNotification}) => {
   const padding = {
     paddingRight: 5
   }
   return (
     <div>
-      <a href='#' style={padding}>anecdotes</a>
-      <a href='#' style={padding}>create new</a>
-      <a href='#' style={padding}>about</a>
+      <Router>
+        <div>
+          <Link to='/' style={padding}>anecdotes </Link>
+          <Link to='/create' style={padding}> create new </Link>
+          <Link to='/about' style={padding}>about </Link>
+          {notification}
+        </div>
+        <Route exact path="/" render={() => <AnecdoteList notification={notification} anecdotes={anecdotes} />} />
+        <Route path="/about" render={() => <About />} />
+        <Route path="/create" render={() => <CreateNew setNotification={setNotification} addNew={addNew} />} />
+        <Route exact path="/anecdotes/:id" render={({match}) => <Anecdote anecdote={anecdoteById(match.params.id)} /> } />
+      </Router>
     </div>
   )
 }
@@ -17,8 +30,16 @@ const AnecdoteList = ({ anecdotes }) => (
   <div>
     <h2>Anecdotes</h2>
     <ul>
-      {anecdotes.map(anecdote => <li key={anecdote.id} >{anecdote.content}</li>)}
+      {anecdotes.map(anecdote => <Link to={`/anecdotes/${anecdote.id}`} ><li key={anecdote.id} >{anecdote.content}</li></Link>)}
     </ul>
+  </div>
+)
+
+const Anecdote = ({ anecdote }) => (
+  <div>
+    <h1>{anecdote.content}</h1>
+    <p>has {anecdote.votes} votes</p>
+    <p>for more info see {anecdote.info}</p>
   </div>
 )
 
@@ -44,7 +65,7 @@ const Footer = () => (
   </div>
 )
 
-const CreateNew = (props) => {
+const CreateNewNoHistory = (props) => {
   const [content, setContent] = useState('')
   const [author, setAuthor] = useState('')
   const [info, setInfo] = useState('')
@@ -58,7 +79,11 @@ const CreateNew = (props) => {
       info,
       votes: 0
     })
+    props.history.push('/')
+    props.setNotification(`a new anecdote ${content} was created`)
+    setTimeout(() => props.setNotification(''), 10000)
   }
+  
 
   return (
     <div>
@@ -82,6 +107,9 @@ const CreateNew = (props) => {
   )
 
 }
+
+const CreateNew = withRouter(CreateNewNoHistory)
+
 
 const App = () => {
   const [anecdotes, setAnecdotes] = useState([
@@ -125,10 +153,7 @@ const App = () => {
   return (
     <div>
       <h1>Software anecdotes</h1>
-      <Menu />
-      <AnecdoteList anecdotes={anecdotes} />
-      <About />
-      <CreateNew addNew={addNew} />
+      <Menu addNew={addNew} anecdotes={anecdotes} anecdoteById={anecdoteById} setNotification={setNotification} notification={notification}/>
       <Footer />
     </div>
   )
